@@ -1,6 +1,6 @@
 import bpy
 from bpy.types import Mesh, Object, Operator
-from bpy.props import IntProperty
+from bpy.props import BoolProperty, IntProperty
 import bmesh
 from bmesh.types import BMesh, BMFace
 from mathutils import Vector
@@ -49,6 +49,12 @@ class MESH_OT_flatten_each_face(Operator):
         description="How many times to flatten each face",
     )
 
+    selected_only: BoolProperty(
+        name="Selected Only",
+        default=True,
+        description="Flatten only the selected faces",
+    )
+
     def execute(self, context):
 
         # Get the active mesh
@@ -61,7 +67,11 @@ class MESH_OT_flatten_each_face(Operator):
         faces_to_flatten: list[BMFace] = []
 
         for face in bm.faces:
-            if face.select:
+            should_flatten_this_face: bool = True
+            if self.selected_only:
+                should_flatten_this_face = face.select
+
+            if should_flatten_this_face:
                 faces_to_flatten.append(face)
 
         for _ in range(0, self.iterations):
