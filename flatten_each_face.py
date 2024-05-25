@@ -1,34 +1,36 @@
 import bpy
-from bpy.types import Operator
+from bpy.types import Mesh, Object, Operator
 import bmesh
+from bmesh.types import BMesh, BMFace
+from mathutils import Vector
 
 
-def get_average_float(float_list):
+def get_average_float(float_list: list[float]) -> float:
     return sum(float_list) / len(float_list)
 
 
-def flatten_each_face(faces_to_flatten):
+def flatten_each_face(faces_to_flatten: list[BMFace]) -> None:
     """Iterates over each face and scales it flat along its normal, for best results repeat 10 - 100 times"""
     for face in faces_to_flatten:
 
-        average_x = []
-        average_y = []
-        average_z = []
+        coordinates_x: list[float] = []
+        coordinates_y: list[float] = []
+        coordinates_z: list[float] = []
 
         for vert in face.verts:
-            average_x.append(vert.co[0])
-            average_y.append(vert.co[1])
-            average_z.append(vert.co[2])
+            coordinates_x.append(vert.co[0])
+            coordinates_y.append(vert.co[1])
+            coordinates_z.append(vert.co[2])
 
-        average_x = get_average_float(average_x)
-        average_y = get_average_float(average_y)
-        average_z = get_average_float(average_z)
+        average_x: float = get_average_float(coordinates_x)
+        average_y: float = get_average_float(coordinates_y)
+        average_z: float = get_average_float(coordinates_z)
 
-        center = (average_x, average_y, average_z)
+        face_center: Vector = Vector((average_x, average_y, average_z))
 
         bpy.ops.mesh.select_all(action="DESELECT")
         face.select = True
-        bpy.ops.transform.resize(value=(1, 1, 0), orient_type="NORMAL", center_override=center)
+        bpy.ops.transform.resize(value=(1, 1, 0), orient_type="NORMAL", center_override=face_center)
 
 
 class MESH_OT_flatten_each_face(Operator):
@@ -41,13 +43,13 @@ class MESH_OT_flatten_each_face(Operator):
     def execute(self, context):
 
         # Get the active mesh
-        obj = context.edit_object
-        me = obj.data
+        obj: Object = context.edit_object
+        me: Mesh = obj.data
 
         # Get a BMesh representation
-        bm = bmesh.from_edit_mesh(me)
+        bm: BMesh = bmesh.from_edit_mesh(me)
 
-        faces_to_flatten = []
+        faces_to_flatten: list[BMFace] = []
 
         for face in bm.faces:
             if face.select:
