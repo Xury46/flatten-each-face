@@ -1,5 +1,6 @@
 import bpy
 from bpy.types import Mesh, Object, Operator
+from bpy.props import IntProperty
 import bmesh
 from bmesh.types import BMesh, BMFace
 from mathutils import Vector
@@ -10,7 +11,7 @@ def get_average_float(float_list: list[float]) -> float:
 
 
 def flatten_each_face(faces_to_flatten: list[BMFace]) -> None:
-    """Iterates over each face and scales it flat along its normal, for best results repeat 10 - 100 times"""
+    """Iterates over each face and scales it flat along its normal"""
     for face in faces_to_flatten:
 
         coordinates_x: list[float] = []
@@ -40,6 +41,14 @@ class MESH_OT_flatten_each_face(Operator):
     bl_label = "Flatten Each Face"
     bl_options = {"REGISTER", "UNDO"}
 
+    iterations: IntProperty(
+        name="Iterations",
+        min=1,
+        soft_max=25,
+        default=10,
+        description="How many times to flatten each face",
+    )
+
     def execute(self, context):
 
         # Get the active mesh
@@ -55,8 +64,7 @@ class MESH_OT_flatten_each_face(Operator):
             if face.select:
                 faces_to_flatten.append(face)
 
-        iterations = 10
-        for _ in range(0, iterations):
+        for _ in range(0, self.iterations):
             flatten_each_face(faces_to_flatten)
 
         # Show the updates in the viewport
