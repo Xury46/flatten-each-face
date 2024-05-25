@@ -6,28 +6,10 @@ from bmesh.types import BMesh, BMFace
 from mathutils import Vector
 
 
-def get_average_float(float_list: list[float]) -> float:
-    return sum(float_list) / len(float_list)
-
-
 def flatten_each_face(faces_to_flatten: list[BMFace]) -> None:
     """Iterates over each face and scales it flat along its normal"""
     for face in faces_to_flatten:
-
-        coordinates_x: list[float] = []
-        coordinates_y: list[float] = []
-        coordinates_z: list[float] = []
-
-        for vert in face.verts:
-            coordinates_x.append(vert.co[0])
-            coordinates_y.append(vert.co[1])
-            coordinates_z.append(vert.co[2])
-
-        average_x: float = get_average_float(coordinates_x)
-        average_y: float = get_average_float(coordinates_y)
-        average_z: float = get_average_float(coordinates_z)
-
-        face_center: Vector = Vector((average_x, average_y, average_z))
+        face_center: Vector = face.calc_center_median()
 
         bpy.ops.mesh.select_all(action="DESELECT")
         face.select = True
