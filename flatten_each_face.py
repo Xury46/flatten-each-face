@@ -3,7 +3,7 @@ from bpy.types import Mesh, Object, Operator
 from bpy.props import BoolProperty, IntProperty
 import bmesh
 from bmesh.types import BMesh, BMFace
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 
 def flatten_each_face(faces_to_flatten: list[BMFace]) -> None:
@@ -11,9 +11,17 @@ def flatten_each_face(faces_to_flatten: list[BMFace]) -> None:
     for face in faces_to_flatten:
         face_center: Vector = face.calc_center_median()
 
-        bpy.ops.mesh.select_all(action="DESELECT")
-        face.select = True
-        bpy.ops.transform.resize(value=(1, 1, 0), orient_type="NORMAL", center_override=face_center)
+        face.normal_update()  # Force the normal to be re-calculated
+        flatten_matrix = Matrix.Scale(
+            0,  # factor
+            4,  # size
+            face.normal,  # axis
+        )
+
+        for vert in face.verts:
+            vert.co -= face_center
+            vert.co = vert.co @ flatten_matrix
+            vert.co += face_center
 
 
 class MESH_OT_flatten_each_face(Operator):
