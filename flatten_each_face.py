@@ -1,4 +1,5 @@
 import bpy
+from bpy.types import Operator
 import bmesh
 
 
@@ -30,27 +31,50 @@ def flatten_each_face(faces_to_flatten):
         bpy.ops.transform.resize(value=(1, 1, 0), orient_type="NORMAL", center_override=center)
 
 
-def execute():
-    # Get the active mesh
-    obj = bpy.context.edit_object
-    me = obj.data
+class MESH_OT_flatten_each_face(Operator):
+    """Flatten each selected face"""
 
-    # Get a BMesh representation
-    bm = bmesh.from_edit_mesh(me)
+    bl_idname = "object.flatten_each_face"
+    bl_label = "Flatten Each Face"
+    bl_options = {"REGISTER", "UNDO"}
 
-    faces_to_flatten = []
+    def execute(self, context):
 
-    for face in bm.faces:
-        if face.select:
-            faces_to_flatten.append(face)
+        # Get the active mesh
+        obj = context.edit_object
+        me = obj.data
 
-    iterations = 10
-    for _ in range(0, iterations):
-        flatten_each_face(faces_to_flatten)
+        # Get a BMesh representation
+        bm = bmesh.from_edit_mesh(me)
 
-    # Show the updates in the viewport
-    # and recalculate n-gon tessellation.
-    bmesh.update_edit_mesh(me, loop_triangles=True)
+        faces_to_flatten = []
+
+        for face in bm.faces:
+            if face.select:
+                faces_to_flatten.append(face)
+
+        iterations = 10
+        for _ in range(0, iterations):
+            flatten_each_face(faces_to_flatten)
+
+        # Show the updates in the viewport
+        # and recalculate n-gon tessellation.
+        bmesh.update_edit_mesh(me, loop_triangles=True)
+
+        return {"FINISHED"}
 
 
-execute()
+def draw(self, context):
+    """Draw the operator as an option on a menu."""
+    layout = self.layout
+    layout.operator(MESH_OT_flatten_each_face.bl_idname)
+
+
+def register():
+    bpy.utils.register_class(MESH_OT_flatten_each_face)
+    bpy.types.VIEW3D_MT_edit_mesh_clean.append(draw)
+
+
+def unregister():
+    bpy.utils.unregister_class(MESH_OT_flatten_each_face)
+    bpy.types.VIEW3D_MT_edit_mesh_clean.remove(draw)
